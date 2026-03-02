@@ -1,0 +1,7 @@
+# CSV original con datos detallados (no subir a GitHub)
+Cumpleaños*.csv
+
+# Python
+__pycache__/
+*.pyc
+.env

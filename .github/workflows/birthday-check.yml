@@ -1,0 +1,24 @@
+name: Birthday Notifications
+
+on:
+  schedule:
+    - cron: '0 12 * * *'  # Todos los días a las 12:00 UTC = 09:00 ART
+  workflow_dispatch:       # Permite ejecución manual para probar
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run birthday notifications
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python notify.py

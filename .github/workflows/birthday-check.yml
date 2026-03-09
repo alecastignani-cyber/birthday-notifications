@@ -2,7 +2,7 @@ name: Birthday Notifications
 
 on:
   schedule:
-    - cron: '0 18 * * 1'  # TEMPORAL: lunes a las 18:00 UTC = 15:00 ART (para testeo)
+    - cron: '0 23 * * 1'  # TEMPORAL: lunes a las 23:00 UTC = 20:00 ART (para testeo)
   workflow_dispatch:       # Permite ejecución manual para probar
 
 jobs:

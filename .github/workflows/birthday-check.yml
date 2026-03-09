@@ -2,7 +2,7 @@ name: Birthday Notifications
 
 on:
   schedule:
-    - cron: '0 12 * * *'  # Todos los días a las 12:00 UTC = 09:00 ART
+    - cron: '0 18 * * 1'  # TEMPORAL: lunes a las 18:00 UTC = 15:00 ART (para testeo)
   workflow_dispatch:       # Permite ejecución manual para probar
 
 jobs:
@@ -18,7 +18,11 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
       - name: Run birthday notifications
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         run: python notify.py

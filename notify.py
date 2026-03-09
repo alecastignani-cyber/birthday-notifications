@@ -1,4 +1,3 @@
-import csv
 import os
 import calendar
 import json
@@ -6,16 +5,35 @@ import urllib.request
 import urllib.error
 from datetime import date
 
+import gspread
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request as GoogleRequest
 
-def cargar_equipo(path="equipo.csv"):
+SHEET_ID = "1mPmtxdZsZLu0XpR8ZzSDTCrxxnwbChDgIxwuknW-wpc"
+
+
+def cargar_equipo():
+    creds_info = json.loads(os.environ["GOOGLE_CREDENTIALS_JSON"])
+    creds = Credentials(
+        token=None,
+        refresh_token=creds_info["refresh_token"],
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=creds_info["client_id"],
+        client_secret=creds_info["client_secret"],
+        scopes=["https://www.googleapis.com/auth/drive"],
+    )
+    creds.refresh(GoogleRequest())
+    gc = gspread.authorize(creds)
+    worksheet = gc.open_by_key(SHEET_ID).get_worksheet(0)
+    # Fila 1: auxiliar, Fila 2: headers → datos desde fila 3 (índice 2)
+    # Columna C (índice 2): Nombre, Columna D (índice 3): Fecha de cumpleaños
+    rows = worksheet.get_all_values()
     equipo = []
-    with open(path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            nombre = row["nombre"].strip()
-            cumple = row["cumpleanos"].strip()
-            if nombre and cumple:
-                equipo.append({"nombre": nombre, "cumpleanos": cumple})
+    for row in rows[2:]:
+        nombre = row[2].strip() if len(row) > 2 else ""
+        cumple = row[3].strip() if len(row) > 3 else ""
+        if nombre and cumple:
+            equipo.append({"nombre": nombre, "cumpleanos": cumple})
     return equipo
 
 
@@ -75,6 +93,39 @@ def enviar_slack(webhook_url, mensaje):
         print(f"  ✗ Error de conexión: {e.reason}")
 
 
+def resumen_semanal(webhook_url, equipo, hoy):
+    """Envía el próximo cumpleaños del equipo. Se llama solo los lunes."""
+    candidatos = []
+    for persona in equipo:
+        fecha = parsear_fecha(persona["cumpleanos"])
+        if not fecha:
+            continue
+        day, month = fecha
+        dias = dias_hasta_cumple(day, month, hoy)
+        if dias is not None:
+            candidatos.append((dias, day, month, persona["nombre"]))
+
+    if not candidatos:
+        return
+
+    candidatos.sort()
+    dias, day, month, nombre_completo = candidatos[0]
+    fecha_fmt = f"{day:02d}/{month:02d}"
+
+    if dias == 0:
+        cuando = "¡hoy mismo! 🎉"
+    elif dias == 1:
+        cuando = "¡mañana!"
+    else:
+        cuando = f"en {dias} días"
+
+    msg = (
+        f"📅 *Resumen semanal* — El próximo cumpleaños del equipo es el de "
+        f"*{nombre_completo}* ({fecha_fmt}), {cuando}"
+    )
+    enviar_slack(webhook_url, msg)
+
+
 def main():
     webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
 
@@ -87,6 +138,11 @@ def main():
     notificaciones = 0
 
     print(f"[{hoy}] Verificando cumpleaños para {len(equipo)} personas...")
+
+    if hoy.weekday() == 0:  # 0 = lunes
+        print("  → Lunes: enviando resumen semanal...")
+        resumen_semanal(webhook_url, equipo, hoy)
+        notificaciones += 1
 
     for persona in equipo:
         fecha = parsear_fecha(persona["cumpleanos"])
@@ -104,9 +160,9 @@ def main():
         nombre_completo = persona["nombre"]
         fecha_fmt = f"{day:02d}/{month:02d}"
 
-        if dias == 5:
+        if dias == 7:
             msg = (
-                f"🎂 *Recordatorio de cumpleaños* — En 5 días es el cumple de "
+                f"🎂 *Recordatorio de cumpleaños* — En 7 días es el cumple de "
                 f"*{nombre_completo}* ({fecha_fmt}). ¡Buen momento para planificar el festejo!"
             )
             enviar_slack(webhook_url, msg)
@@ -114,7 +170,7 @@ def main():
 
         elif dias == 1:
             msg = (
-                f"🎂 *¡Mañana es el cumpleaños de {nombre_completo}!* "
+                f"🎂 *¡Mañana es el cumpleaños de {nombre_completo}!* ({fecha_fmt}) "
                 f"No te olvides de felicitarlo/a 😊"
             )
             enviar_slack(webhook_url, msg)
@@ -122,7 +178,7 @@ def main():
 
         elif dias == 0:
             msg = (
-                f"🎉 *¡HOY es el cumpleaños de {nombre_completo}!* "
+                f"🎉 *¡HOY es el cumpleaños de {nombre_completo}!* ({fecha_fmt}) "
                 f"¡Muchas felicidades, {nombre}! 🥳🎊"
             )
             enviar_slack(webhook_url, msg)

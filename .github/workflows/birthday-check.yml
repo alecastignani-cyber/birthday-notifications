@@ -2,8 +2,7 @@ name: Birthday Notifications
 
 on:
   schedule:
-    - cron: '30 11 * * 1'  # Lunes a las 11:30 UTC = 08:30 ART
-    - cron: '0 12 * * 0,2-6' # Martes a domingo a las 12:00 UTC = 09:00 ART (0=Dom, 2-6=Mar-Sáb)
+    - cron: '0 12 * * *'  # Todos los días a las 12:00 UTC = 09:00 ART
   workflow_dispatch:       # Permite ejecución manual para probar
 
 jobs:

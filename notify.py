@@ -139,6 +139,10 @@ def main():
 
     print(f"[{hoy}] Verificando cumpleaños para {len(equipo)} personas...")
 
+    # TEST TEMPORAL — borrar después de verificar
+    enviar_slack(webhook_url, "🧪 *Mensaje de prueba* — El bot de cumpleaños está funcionando correctamente ✅")
+    return
+
     if hoy.weekday() == 0:  # 0 = lunes
         print("  → Lunes: enviando resumen semanal...")
         resumen_semanal(webhook_url, equipo, hoy)

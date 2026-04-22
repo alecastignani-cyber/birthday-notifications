@@ -31,16 +31,70 @@ Bot automático que envía recordatorios a Slack cuando se acerca el cumpleaños
 
 ---
 
+## Consultar cumpleaños bajo demanda
+
+Además de las notificaciones automáticas, podés preguntarle al bot cuándo cumple años alguien específico del equipo. El flujo es:
+
+1. Disparás un **Workflow de Slack** (shortcut o link)
+2. Slack te pide el nombre a buscar y llama a la GitHub Action `Birthday Query`
+3. En ~30-60 segundos, el bot responde en el canal con la fecha y cuántos días faltan
+
+Ejemplos de respuesta:
+
+```
+📅 *Gabriela Lezcano* cumple el *29/02* — faltan *312 días*.
+
+🎂 *Luis Regalado* cumple años *mañana* (21/08).
+
+🔍 Encontré 2 personas con *ana*:
+• *Ana García* — 15/03 (faltan 45 días)
+• *Mariana López* — 08/11 (faltan 200 días)
+```
+
+### Cómo configurar la consulta en Slack (Workflow Builder)
+
+Necesitás un **GitHub Personal Access Token (PAT)** con el scope `workflow`.
+
+**Crear el PAT:**
+1. GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+2. Generate new token → scope: `workflow` → copiá el token (`ghp_...`)
+
+**Crear el Workflow en Slack:**
+1. Slack → Apps → **Workflow Builder** → New Workflow
+2. Elegí como trigger: **Shortcut** (aparece como ⚡ en el compositor de mensajes)
+3. Poné un nombre, ej: `Consultar cumpleaños`
+4. Agregá un paso → **Collect info in a form**:
+   - Agregá campo de texto: *¿A quién querés consultar?* → variable: `nombre`
+5. Agregá un paso → **Send HTTP request**:
+   - **URL**: `https://api.github.com/repos/alecastignani-cyber/birthday-notifications/actions/workflows/birthday-query.yml/dispatches`
+   - **Method**: POST
+   - **Headers**:
+     - `Authorization` → `Bearer ghp_TU_TOKEN_AQUI`
+     - `Accept` → `application/vnd.github.v3+json`
+     - `Content-Type` → `application/json`
+   - **Request body**:
+     ```json
+     {"ref": "main", "inputs": {"nombre": "{{nombre}}"}}
+     ```
+     (reemplazá `{{nombre}}` con la variable del formulario del paso anterior)
+6. Guardá y publicá el workflow
+
+> La respuesta llega en ~30-60 segundos como mensaje del bot en el canal de Slack configurado.
+
+---
+
 ## Estructura del proyecto
 
 ```
 .
-├── notify.py                  # Script principal
-├── requirements.txt           # Dependencias: gspread + google-auth
+├── notify.py                   # Script de notificaciones automáticas
+├── query.py                    # Script de consulta bajo demanda
+├── requirements.txt            # Dependencias: gspread + google-auth
 ├── .github/
 │   └── workflows/
-│       └── birthday-check.yml # Cron job de GitHub Actions (09:00 ART diario)
-└── CLAUDE.md                  # Instrucciones para Claude Code (AI assistant)
+│       ├── birthday-check.yml  # Cron job diario (09:00 ART)
+│       └── birthday-query.yml  # Workflow de consulta (disparado desde Slack)
+└── CLAUDE.md                   # Instrucciones para Claude Code (AI assistant)
 ```
 
 ---

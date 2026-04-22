@@ -1,0 +1,32 @@
+name: Birthday Query
+
+on:
+  workflow_dispatch:
+    inputs:
+      nombre:
+        description: 'Nombre a consultar (parcial, sin distinguir mayúsculas)'
+        required: true
+        type: string
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Query birthday
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          QUERY_NOMBRE: ${{ github.event.inputs.nombre }}
+        run: python query.py

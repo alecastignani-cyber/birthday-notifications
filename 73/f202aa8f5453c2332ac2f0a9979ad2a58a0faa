@@ -1,0 +1,19 @@
+.github/workflows/keepalive.yml
+  s_77e1be5f7af112::t_45a432b9bd0393 1-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "73f202aa8f5453c2332ac2f0a9979ad2a58a0faa",
+  "prompts": {},
+  "sessions": {
+    "s_77e1be5f7af112": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ae96f7b-5d16-4fe4-83d5-4c6d35e5dfa6",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Alejandro Castignani <alejandro.castignani@mercadolibre.com>"
+    }
+  }
+}
